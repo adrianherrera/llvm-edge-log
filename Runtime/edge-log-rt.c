@@ -21,6 +21,8 @@ void __edge_log(const char *file, const char *func, int32_t line,
     fprintf(log_file, "[%s:%s:%d] %s @%p\n", file, func, line,
             edge_strings[edge_type], ret_addr);
   }
+
+  fflush(log_file);
 }
 
 __attribute__((constructor)) void __edge_log_init(void) {
