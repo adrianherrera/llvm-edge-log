@@ -67,7 +67,12 @@ bool EdgeLog::runOnModule(Module &M) {
     }
 
     DISubprogram *FuncDI = F.getSubprogram();
-    StringRef FuncName = FuncDI ? FuncDI->getName() : F.getName();
+    StringRef FuncName = FuncDI ? FuncDI->getName() : "";
+    if (FuncName.empty()) {
+      FuncName = F.getName();
+    }
+
+    assert(!FuncName.empty());
 
     // Create pointers to the file and function name strings
     BasicBlock::iterator IP = F.getEntryBlock().getFirstInsertionPt();
@@ -90,10 +95,13 @@ bool EdgeLog::runOnModule(Module &M) {
         ConstantInt *EdgeTy = nullptr;
 
         if (isa<CallInst>(I) || isa<InvokeInst>(I)) {
-          // Don't instrument LLVM intrinsics
+          // Don't instrument LLVM intrinsics or ASan functions
           CallSite CS(I);
           if (auto *CalledF = CS.getCalledFunction()) {
             if (CalledF->isIntrinsic()) {
+              continue;
+            }
+            if (CalledF->getName().startswith("__asan_")) {
               continue;
             }
           }
