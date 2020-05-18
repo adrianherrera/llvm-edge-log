@@ -6,6 +6,18 @@
 
 static FILE *log_file = NULL;
 
+static void initialize_log() {
+  char *log_path = getenv(EDGE_LOG_ENV);
+  if (!log_path) {
+    log_file = stderr;
+  }
+
+  log_file = fopen(log_path, "w");
+  if (!log_file) {
+    log_file = stderr;
+  }
+}
+
 void __edge_log(const char *file, const char *func, int32_t line,
                 enum EdgeType edge_type) {
   static const char *edge_strings[] = {
@@ -13,6 +25,10 @@ void __edge_log(const char *file, const char *func, int32_t line,
       "unconditional branch", "switch",          "unreachable",
       "unknown edge"};
   void *ret_addr = __builtin_return_address(0);
+
+  if (__builtin_expect(log_file == NULL, 0)) {
+    initialize_log();
+  }
 
   if (line < 0) {
     fprintf(log_file, "[%s:%s:?] %s @%p\n", file, func, edge_strings[edge_type],
@@ -23,20 +39,4 @@ void __edge_log(const char *file, const char *func, int32_t line,
   }
 
   fflush(log_file);
-}
-
-__attribute__((constructor)) void __edge_log_init(void) {
-  if (log_file) {
-    return;
-  }
-
-  char *log_path = getenv(EDGE_LOG_ENV);
-  if (!log_path) {
-    log_file = stderr;
-  }
-
-  log_file = fopen(log_path, "w");
-  if (!log_file) {
-    log_file = stderr;
-  }
 }
