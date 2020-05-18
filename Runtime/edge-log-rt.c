@@ -6,16 +6,21 @@
 
 static FILE *log_file = NULL;
 
-__thread uint8_t __edge_type = EdgeUnknown;
-
-void __edge_log(char *func_name) {
-  static char *edge_strings[] = {" call", " return", " conditional branch",
-                                 " unconditional branch", " switch",
-                                 " unreachable", ""};
+void __edge_log(const char *file, const char *func, int32_t line,
+                enum EdgeType edge_type) {
+  static const char *edge_strings[] = {
+      "function call",        "function return", "conditional branch",
+      "unconditional branch", "switch",          "unreachable",
+      "unknown edge"};
   void *ret_addr = __builtin_return_address(0);
 
-  fprintf(log_file, "%s:%s edge to %p\n", func_name, edge_strings[__edge_type],
-          ret_addr);
+  if (line < 0) {
+    fprintf(log_file, "[%s:%s:?] %s @%p\n", file, func, edge_strings[edge_type],
+            ret_addr);
+  } else {
+    fprintf(log_file, "[%s:%s:%d] %s @%p\n", file, func, line,
+            edge_strings[edge_type], ret_addr);
+  }
 }
 
 __attribute__((constructor)) void __edge_log_init(void) {
