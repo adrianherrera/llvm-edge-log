@@ -1,0 +1,5 @@
+if(LLVM_PACKAGE_VERSION VERSION_GREATER_EQUAL 8)
+    add_llvm_library(split-compares MODULE SplitCompares.cpp PLUGIN_TOOL opt)
+else()
+    add_llvm_loadable_module(split-compares SplitCompares.cpp PLUGIN_TOOL opt)
+endif()

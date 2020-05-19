@@ -1,0 +1,5 @@
+if(LLVM_PACKAGE_VERSION VERSION_GREATER_EQUAL 8)
+    add_llvm_library(split-switches MODULE SplitSwitches.cpp PLUGIN_TOOL opt)
+else()
+    add_llvm_loadable_module(split-switches SplitSwitches.cpp PLUGIN_TOOL opt)
+endif()

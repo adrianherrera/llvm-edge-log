@@ -1,0 +1,3 @@
+add_subdirectory(EdgeLog)
+add_subdirectory(SplitCompares)
+add_subdirectory(SplitSwitches)
