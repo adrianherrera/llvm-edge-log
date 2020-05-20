@@ -18,5 +18,8 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -fno-rtti")
 
-add_subdirectory(Transform)
+add_subdirectory(Transforms)
 add_subdirectory(Runtime)
+
+install(PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/inst_compiler.py" DESTINATION bin RENAME "inst_compiler")
+install(PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/inst_compiler.py" DESTINATION bin RENAME "inst_compiler++")
