@@ -31,16 +31,20 @@ def main():
         if not cc:
             cc = which('clang')
 
-    plugins = (os.path.join(LIB_DIR, 'split-compares.so'),
-               os.path.join(LIB_DIR, 'split-switches.so'),
-               os.path.join(LIB_DIR, 'edge-log.so'))
+    if os.environ.get('LLVM_SPLIT_COMPARES'):
+        plugins = (os.path.join(LIB_DIR, 'split-compares.so'),
+                   os.path.join(LIB_DIR, 'split-switches.so'),
+                   os.path.join(LIB_DIR, 'edge-log.so'))
+    else:
+        plugins = (os.path.join(LIB_DIR, 'edge-log.so'))
 
     plugin_opts = ['-fplugin=%s' % os.path.realpath(plug) for plug in plugins]
 
     # Run the build
-    run_args = [cc, *plugin_opts, '-Qunused-arguments']
+    run_args = [cc, *plugin_opts, '-Qunused-arguments', os.path.join(LIB_DIR, 'objects', 'edge-log-rt', 'edge-log-rt.c.o')]
     if len(args) > 1:
         run_args.extend([*args[1:]])
+    print(' '.join(run_args))
     proc = run(run_args, check=False)
 
     return proc.returncode
