@@ -9,6 +9,7 @@ Author: Adrian Herrera
 
 from argparse import ArgumentParser
 from collections import defaultdict
+from csv import DictWriter
 import re
 import sys
 
@@ -28,6 +29,8 @@ REGEXES = {
 def parse_args():
     """Parse command-line arguments."""
     parser = ArgumentParser(description='Summarize executed edges')
+    parser.add_argument('-c', '--csv', required=False,
+                        help='Path to output CSV')
     parser.add_argument('log', nargs='+', help='Path to the edge log file(s)')
 
     return parser.parse_args()
@@ -49,11 +52,19 @@ def main():
                         results[log_path][label] += 1
                         break
 
-    # Tabulate results
+    # Print results
     header = ('log', *REGEXES.keys())
-    table = ((log, *[result[label] for label in REGEXES.keys()]) for
-             log, result in results.items())
-    print(tabulate(table, headers=header))
+    csv_path = args.csv
+    if csv_path:
+        with open(csv_path, 'w') as csvfile:
+            writer = DictWriter(csvfile, fieldnames=header)
+            writer.writeheader()
+            writer.writerows(({'log': log, **result} for log, result in
+                              results.items()))
+    else:
+        table = ((log, *[result[label] for label in REGEXES.keys()]) for
+                 log, result in results.items())
+        print(tabulate(table, headers=header))
 
 
 if __name__ == '__main__':
