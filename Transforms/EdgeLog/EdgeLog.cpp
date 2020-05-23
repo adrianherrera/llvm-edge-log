@@ -98,15 +98,15 @@ bool EdgeLog::runOnModule(Module &M) {
           // Don't instrument LLVM intrinsics or ASan functions
           CallSite CS(I);
           if (auto *CalledF = CS.getCalledFunction()) {
-            if (CalledF->isIntrinsic()) {
+            if (CalledF->isIntrinsic() ||
+                CalledF->getName().startswith("__asan_")) {
               continue;
             }
-            if (CalledF->getName().startswith("__asan_")) {
-              continue;
-            }
-          }
 
-          EdgeTy = ConstantInt::get(Int8Ty, EdgeType::EdgeCall);
+            EdgeTy = ConstantInt::get(Int8Ty, EdgeType::EdgeDirectCall);
+          } else {
+            EdgeTy = ConstantInt::get(Int8Ty, EdgeType::EdgeIndirectCall);
+          }
         } else if (I->isTerminator()) {
           EdgeType EdgeTyVal = EdgeType::EdgeUnknown;
 

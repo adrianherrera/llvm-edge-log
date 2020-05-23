@@ -4,7 +4,8 @@
 #define EDGE_LOG_ENV "EDGE_LOG_PATH"
 
 enum EdgeType {
-  EdgeCall = 0,
+  EdgeDirectCall = 0,
+  EdgeIndirectCall,
   EdgeRet,
   EdgeCondBr,
   EdgeUncondBr,

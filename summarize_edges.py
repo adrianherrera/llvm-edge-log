@@ -17,8 +17,9 @@ from tabulate import tabulate
 
 
 REGEXES = {
-    'function call': re.compile(r' function call '),
-    'function return': re.compile(r' function return '),
+    'direct call': re.compile(r' direct call '),
+    'indirect call': re.compile(r' indirect call '),
+    'return': re.compile(r' return '),
     'conditional branch': re.compile(r' conditional branch '),
     'unconditional branch': re.compile(r' unconditional branch '),
     'switch': re.compile(r' switch '),

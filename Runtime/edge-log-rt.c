@@ -21,9 +21,9 @@ static void initialize_log() {
 void __edge_log(const char *file, const char *func, int32_t line,
                 enum EdgeType edge_type) {
   static const char *edge_strings[] = {
-      "function call",        "function return", "conditional branch",
-      "unconditional branch", "switch",          "unreachable",
-      "unknown edge"};
+      "direct call",        "indirect call",        "return",
+      "conditional branch", "unconditional branch", "switch",
+      "unreachable",        "unknown edge"};
   void *ret_addr = __builtin_return_address(0);
 
   if (__builtin_expect(log_file == NULL, 0)) {
