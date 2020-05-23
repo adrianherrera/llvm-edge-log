@@ -36,7 +36,7 @@ def main():
                    os.path.join(LIB_DIR, 'split-switches.so'),
                    os.path.join(LIB_DIR, 'edge-log.so'))
     else:
-        plugins = (os.path.join(LIB_DIR, 'edge-log.so'))
+        plugins = (os.path.join(LIB_DIR, 'edge-log.so'),)
 
     plugin_opts = ['-fplugin=%s' % os.path.realpath(plug) for plug in plugins]
 
@@ -44,7 +44,6 @@ def main():
     run_args = [cc, *plugin_opts, '-Qunused-arguments', os.path.join(LIB_DIR, 'objects', 'edge-log-rt', 'edge-log-rt.c.o')]
     if len(args) > 1:
         run_args.extend([*args[1:]])
-    print(' '.join(run_args))
     proc = run(run_args, check=False)
 
     return proc.returncode
