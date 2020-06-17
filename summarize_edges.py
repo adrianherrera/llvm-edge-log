@@ -54,17 +54,19 @@ def main():
                         break
 
     # Print results
-    header = ('log', *REGEXES.keys())
+    header = ('log', *REGEXES.keys(), 'total')
     csv_path = args.csv
     if csv_path:
         with open(csv_path, 'w') as csvfile:
             writer = DictWriter(csvfile, fieldnames=header)
             writer.writeheader()
-            writer.writerows(({'log': log, **result} for log, result in
+            writer.writerows(({'log': log,
+                               **result,
+                               'total': sum(result.values())} for log, result in
                               results.items()))
     else:
-        table = ((log, *[result[label] for label in REGEXES.keys()]) for
-                 log, result in results.items())
+        table = ((log, *[result[label] for label in REGEXES.keys()],
+                  sum(result.values())) for log, result in results.items())
         print(tabulate(table, headers=header))
 
 
