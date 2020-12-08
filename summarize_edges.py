@@ -7,11 +7,11 @@ Author: Adrian Herrera
 """
 
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from collections import defaultdict
 from csv import DictWriter
+from pathlib import Path
 import re
-import sys
 
 from tabulate import tabulate
 
@@ -27,13 +27,13 @@ REGEXES = {
 }
 
 
-def parse_args():
+def parse_args() -> Namespace:
     """Parse command-line arguments."""
     parser = ArgumentParser(description='Summarize executed edges')
-    parser.add_argument('-c', '--csv', required=False,
+    parser.add_argument('-c', '--csv', required=False, type=Path,
                         help='Path to output CSV')
-    parser.add_argument('log', nargs='+', help='Path to the edge log file(s)')
-
+    parser.add_argument('log', nargs='+', type=Path,
+                        help='Path to the edge log file(s)')
     return parser.parse_args()
 
 
@@ -60,12 +60,12 @@ def main():
         with open(csv_path, 'w') as csvfile:
             writer = DictWriter(csvfile, fieldnames=header)
             writer.writeheader()
-            writer.writerows(({'log': log,
+            writer.writerows(({'log': str(log),
                                **result,
                                'total': sum(result.values())} for log, result in
                               results.items()))
     else:
-        table = ((log, *[result[label] for label in REGEXES.keys()],
+        table = ((log, *[result[label] for label in REGEXES],
                   sum(result.values())) for log, result in results.items())
         print(tabulate(table, headers=header))
 

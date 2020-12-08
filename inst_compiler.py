@@ -8,13 +8,14 @@ Author: Adrian Herrera
 
 
 import os
+from pathlib import Path
 from shutil import which
 from subprocess import run
 import sys
 
 
-DIR = os.path.dirname(__file__)
-LIB_DIR = os.path.join(DIR, '..', 'lib')
+DIR = Path(__file__).parent
+LIB_DIR = DIR / '..' / 'lib'
 
 
 def main():
@@ -30,18 +31,21 @@ def main():
         cc = os.environ.get('LLVM_CC')
         if not cc:
             cc = which('clang')
+    if not cc:
+        raise Exception('Unable to find clang (set LLVM_CC env variable)')
 
     if os.environ.get('LLVM_SPLIT_COMPARES'):
-        plugins = (os.path.join(LIB_DIR, 'split-compares.so'),
-                   os.path.join(LIB_DIR, 'split-switches.so'),
-                   os.path.join(LIB_DIR, 'edge-log.so'))
+        plugins = (LIB_DIR / 'split-compares.so',
+                   LIB_DIR / 'split-switches.so',
+                   LIB_DIR / 'edge-log.so')
     else:
-        plugins = (os.path.join(LIB_DIR, 'edge-log.so'),)
+        plugins = (LIB_DIR / 'edge-log.so',)
 
-    plugin_opts = ['-fplugin=%s' % os.path.realpath(plug) for plug in plugins]
+    plugin_opts = ['-fplugin=%s' % plug.resolve() for plug in plugins]
 
     # Run the build
-    run_args = [cc, *plugin_opts, '-Qunused-arguments', os.path.join(LIB_DIR, 'objects', 'edge-log-rt', 'edge-log-rt.c.o')]
+    run_args = [cc, *plugin_opts, '-Qunused-arguments',
+                str(LIB_DIR / 'objects' / 'edge-log-rt' / 'edge-log-rt.c.o')]
     if len(args) > 1:
         run_args.extend([*args[1:]])
     proc = run(run_args, check=False)
