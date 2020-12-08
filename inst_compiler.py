@@ -43,9 +43,12 @@ def main():
 
     plugin_opts = ['-fplugin=%s' % plug.resolve() for plug in plugins]
 
+    # Determine build target
+    bit_mode = 32 if '-m32' in args else 64
+
     # Run the build
     run_args = [cc, *plugin_opts, '-Qunused-arguments',
-                str(LIB_DIR / 'objects' / 'edge-log-rt' / 'edge-log-rt.c.o')]
+                str(LIB_DIR / 'objects' / ('edge-log-rt-%d' % bit_mode) / 'edge-log-rt.c.o')]
     if len(args) > 1:
         run_args.extend([*args[1:]])
     proc = run(run_args, check=False)
