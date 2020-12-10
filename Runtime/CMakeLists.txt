@@ -1,5 +1,5 @@
-add_library(edge-log-rt-32 OBJECT edge-log-rt.c)
-add_library(edge-log-rt-64 OBJECT edge-log-rt.c)
+add_library(edge-log-rt-32 OBJECT edge-log-rt.cpp)
+add_library(edge-log-rt-64 OBJECT edge-log-rt.cpp)
 
 set_target_properties(edge-log-rt-32 PROPERTIES
                       COMPILE_FLAGS "-m32"

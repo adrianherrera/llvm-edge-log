@@ -15,16 +15,12 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "llvm/IR/CallSite.h"
-#include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Instrumentation.h"
-
-#include "edge-log.h"
 
 using namespace llvm;
 
@@ -48,99 +44,23 @@ char EdgeLog::ID = 0;
 
 bool EdgeLog::runOnModule(Module &M) {
   LLVMContext &C = M.getContext();
-
-  IntegerType *Int8Ty = Type::getInt8Ty(C);
-  PointerType *Int8PtrTy = Int8Ty->getPointerTo();
-  IntegerType *Int32Ty = Type::getInt32Ty(C);
+  bool Modifed = false;
 
   auto LogEdgeF = M.getOrInsertFunction(
       kEdgeLogFuncName,
-      FunctionType::get(Type::getVoidTy(C),
-                        {Int8PtrTy, Int8PtrTy, Int32Ty, Int8Ty},
-                        /* isVarArg */ false));
+      FunctionType::get(Type::getVoidTy(C), /* isVarArg */ false));
 
   for (auto &F : M) {
-    StringRef FileName = M.getSourceFileName();
-
-    if (F.isDeclaration()) {
-      continue;
-    }
-
-    DISubprogram *FuncDI = F.getSubprogram();
-    StringRef FuncName = FuncDI ? FuncDI->getName() : "";
-    if (FuncName.empty()) {
-      FuncName = F.getName();
-    }
-
-    assert(!FuncName.empty());
-
-    // Create pointers to the file and function name strings
-    BasicBlock::iterator IP = F.getEntryBlock().getFirstInsertionPt();
-    IRBuilder<> IRB(&(*IP));
-    Constant *File = IRB.CreateGlobalStringPtr(FileName);
-    Constant *Func = IRB.CreateGlobalStringPtr(FuncName);
-
     for (auto &BB : F) {
-      // Cache instructions
-      SmallVector<Instruction *, 16> Insts;
-      for (auto &I : BB) {
-        Insts.push_back(&I);
-      }
+      BasicBlock::iterator IP = BB.getFirstInsertionPt();
+      IRBuilder<> IRB(&*IP);
+      IRB.CreateCall(LogEdgeF);
 
-      // Log all edge transitions
-      for (auto *I : Insts) {
-        const DebugLoc &DbgLoc = I->getDebugLoc();
-        ConstantInt *LineNo = ConstantInt::get(
-            Int32Ty, DbgLoc ? DbgLoc.getLine() : -1, /* isSigned */ true);
-        ConstantInt *EdgeTy = nullptr;
-
-        if (isa<CallInst>(I) || isa<InvokeInst>(I)) {
-          // Don't instrument LLVM intrinsics or ASan functions
-          CallSite CS(I);
-          if (auto *CalledF = CS.getCalledFunction()) {
-            if (CalledF->isIntrinsic() ||
-                CalledF->getName().startswith("__asan_")) {
-              continue;
-            }
-
-            EdgeTy = ConstantInt::get(Int8Ty, EdgeType::EdgeDirectCall);
-          } else {
-            EdgeTy = ConstantInt::get(Int8Ty, EdgeType::EdgeIndirectCall);
-          }
-        } else if (I->isTerminator()) {
-          EdgeType EdgeTyVal = EdgeType::EdgeUnknown;
-
-          switch (I->getOpcode()) {
-          case Instruction::Br:
-            EdgeTyVal = cast<BranchInst>(I)->isConditional()
-                            ? EdgeType::EdgeCondBr
-                            : EdgeType::EdgeUncondBr;
-            break;
-          case Instruction::Switch:
-            EdgeTyVal = EdgeType::EdgeSwitch;
-            break;
-          case Instruction::Ret:
-            EdgeTyVal = EdgeType::EdgeRet;
-            break;
-          case Instruction::Unreachable:
-            EdgeTyVal = EdgeType::EdgeUnreachable;
-            break;
-          }
-
-          EdgeTy = ConstantInt::get(Int8Ty, EdgeTyVal);
-        }
-
-        if (!EdgeTy) {
-          continue;
-        }
-
-        IRB.SetInsertPoint(I);
-        IRB.CreateCall(LogEdgeF, {File, Func, LineNo, EdgeTy});
-      }
+      Modifed = true;
     }
   }
 
-  return true;
+  return Modifed;
 }
 
 static RegisterPass<EdgeLog> X("edge-log", "Executed edge statistics", false,

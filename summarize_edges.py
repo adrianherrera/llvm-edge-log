@@ -9,22 +9,10 @@ Author: Adrian Herrera
 
 from argparse import ArgumentParser, Namespace
 from collections import defaultdict
-from csv import DictWriter
+from csv import DictReader, DictWriter
 from pathlib import Path
-import re
 
 from tabulate import tabulate
-
-
-REGEXES = {
-    'direct call': re.compile(r' direct call '),
-    'indirect call': re.compile(r' indirect call '),
-    'return': re.compile(r' return '),
-    'conditional branch': re.compile(r' conditional branch '),
-    'unconditional branch': re.compile(r' unconditional branch '),
-    'switch': re.compile(r' switch '),
-    'unknown edge': re.compile(r' unknown edge '),
-}
 
 
 def parse_args() -> Namespace:
@@ -46,15 +34,12 @@ def main():
 
     for log_path in args.log:
         with open(log_path, 'r') as log:
-            for line in log:
-                for label, regex in REGEXES.items():
-                    match = regex.search(line)
-                    if match:
-                        results[log_path][label] += 1
-                        break
+            reader = DictReader(log)
+            for row in reader:
+                results[log_path][(row['prev_addr'], row['cur_addr'])] += 1
 
     # Print results
-    header = ('log', *REGEXES.keys(), 'total')
+    header = ('log', 'prev addr', 'cur addr', 'count')
     csv_path = args.csv
     if csv_path:
         with open(csv_path, 'w') as csvfile:
