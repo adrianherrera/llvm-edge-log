@@ -1,3 +1,4 @@
+#include <dlfcn.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -10,6 +11,7 @@ using EdgeVector = std::vector<Edge>;
 const char *const kEdgeLogEnv = "EDGE_LOG_PATH";
 
 static EdgeVector *Edges;
+static std::uintptr_t BaseAddr;
 static __thread std::uintptr_t PrevBB;
 
 __attribute__((constructor)) static void Initialize() {
@@ -29,7 +31,7 @@ __attribute__((destructor)) static void WriteLog() {
     LogFile = stderr;
   }
 
-  fprintf(LogFile, "prev_addr,cur_addr\n");
+  fprintf(LogFile, "# base address: %zu\nprev_addr,cur_addr\n", BaseAddr);
   for (const auto &Edge : *Edges) {
     fprintf(LogFile, "%zu,%zu\n", Edge.first, Edge.second);
   }
@@ -39,8 +41,14 @@ __attribute__((destructor)) static void WriteLog() {
 }
 
 extern "C" void __edge_log() {
-  std::uintptr_t CurBB =
-      reinterpret_cast<std::uintptr_t>(__builtin_return_address(0));
+  void *Ret = __builtin_return_address(0);
+  std::uintptr_t CurBB = reinterpret_cast<std::uintptr_t>(Ret);
+
+  if (__builtin_expect(BaseAddr == 0, 0)) {
+    Dl_info Info;
+    dladdr(Ret, &Info);
+    BaseAddr = reinterpret_cast<std::uintptr_t>(Info.dli_fbase);
+  }
 
   Edges->push_back({PrevBB, CurBB});
   PrevBB = CurBB;

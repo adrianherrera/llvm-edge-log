@@ -11,8 +11,12 @@ from argparse import ArgumentParser, Namespace
 from collections import defaultdict
 from csv import DictReader, DictWriter
 from pathlib import Path
+import re
 
 from tabulate import tabulate
+
+
+BASE_ADDR_RE = re.compile(r'^# base address: (\d+)')
 
 
 def parse_args() -> Namespace:
@@ -34,24 +38,33 @@ def main():
 
     for log_path in args.log:
         with open(log_path, 'r') as log:
+            # Read base address
+            match = BASE_ADDR_RE.match(log.readline())
+            assert match, 'Failed to match base address'
+            base_addr = match.group(1)
+
+            # Read edge data
             reader = DictReader(log)
             for row in reader:
                 results[log_path][(row['prev_addr'], row['cur_addr'])] += 1
 
     # Print results
-    header = ('log', 'prev addr', 'cur addr', 'count')
+    header = ('log', 'prev_addr', 'cur_addr', 'count')
     csv_path = args.csv
     if csv_path:
         with open(csv_path, 'w') as csvfile:
             writer = DictWriter(csvfile, fieldnames=header)
             writer.writeheader()
-            writer.writerows(({'log': str(log),
-                               **result,
-                               'total': sum(result.values())} for log, result in
-                              results.items()))
+            writer.writerows({'log': str(log),
+                              'prev_addr': prev_addr,
+                              'cur_addr': cur_addr,
+                              'count': count}
+                             for log, result in results.items()
+                             for (prev_addr, cur_addr), count in result.items())
     else:
-        table = ((log, *[result[label] for label in REGEXES],
-                  sum(result.values())) for log, result in results.items())
+        table = ((log, prev_addr, cur_addr, count)
+                 for log, result in results.items()
+                 for (prev_addr, cur_addr), count in result.items())
         print(tabulate(table, headers=header))
 
 
