@@ -11,12 +11,8 @@ from argparse import ArgumentParser, Namespace
 from collections import defaultdict
 from csv import DictReader, DictWriter
 from pathlib import Path
-import re
 
 from tabulate import tabulate
-
-
-BASE_ADDR_RE = re.compile(r'^# base address: (\d+)')
 
 
 def parse_args() -> Namespace:
@@ -38,33 +34,33 @@ def main():
 
     for log_path in args.log:
         with open(log_path, 'r') as log:
-            # Read base address
-            match = BASE_ADDR_RE.match(log.readline())
-            assert match, 'Failed to match base address'
-            base_addr = match.group(1)
-
             # Read edge data
             reader = DictReader(log)
             for row in reader:
-                results[log_path][(row['prev_addr'], row['cur_addr'])] += 1
+                key = (row['shared_object'], int(row['base_addr']),
+                       int(row['prev_addr']), int(row['cur_addr']))
+                results[log_path][key] += 1
 
     # Print results
-    header = ('log', 'prev_addr', 'cur_addr', 'count')
+    header = ('log', 'shared_object', 'base_addr', 'prev_addr', 'cur_addr',
+              'count')
     csv_path = args.csv
     if csv_path:
         with open(csv_path, 'w') as csvfile:
             writer = DictWriter(csvfile, fieldnames=header)
             writer.writeheader()
             writer.writerows({'log': str(log),
-                              'prev_addr': prev_addr,
-                              'cur_addr': cur_addr,
+                              'shared_object': so,
+                              'base_addr': base,
+                              'prev_addr': prev,
+                              'cur_addr': cur,
                               'count': count}
                              for log, result in results.items()
-                             for (prev_addr, cur_addr), count in result.items())
+                             for (so, base, prev, cur), count in result.items())
     else:
-        table = ((log, prev_addr, cur_addr, count)
+        table = ((log, so, '%#x' % base, '%#x' % prev, '%#x' % cur, count)
                  for log, result in results.items()
-                 for (prev_addr, cur_addr), count in result.items())
+                 for (so, base, prev, cur), count in result.items())
         print(tabulate(table, headers=header))
 
 
