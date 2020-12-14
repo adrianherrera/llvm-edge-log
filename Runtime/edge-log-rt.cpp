@@ -2,7 +2,6 @@
 #include <cstdio>
 #include <dlfcn.h>
 
-#include <map>
 #include <vector>
 
 #include <zlib.h>
