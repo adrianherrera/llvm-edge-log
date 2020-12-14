@@ -17,12 +17,20 @@ __attribute__((weak)) EdgeVector *Edges = nullptr;
 __attribute__((weak)) std::uintptr_t BaseAddr;
 __attribute__((weak)) __thread std::uintptr_t PrevBB;
 
-template <typename T, int PrintF(T, const char *, ...)>
-static void WriteLog(T LogFile) {
+template <typename T, T OpenF(const char *, const char *),
+          int PrintF(T, const char *, ...), int CloseF(T)>
+static void WriteLog(const char *LogPath) {
+  T LogFile = OpenF(LogPath, "w");
+  if (!LogFile) {
+    return;
+  }
+
   PrintF(LogFile, "# base address: %zu\nprev_addr,cur_addr\n", BaseAddr);
   for (const auto &Edge : *Edges) {
     PrintF(LogFile, "%zu,%zu\n", Edge.first, Edge.second);
   }
+
+  CloseF(LogFile);
 }
 
 __attribute__((constructor)) static void Initialize() {
@@ -44,21 +52,9 @@ __attribute__((destructor)) static void AtExit() {
   }
 
   if (getenv(kEnableGZipEnv)) {
-    gzFile Log = gzopen(LogPath, "w");
-    if (!Log) {
-      goto Cleanup;
-    }
-    WriteLog<gzFile, gzprintf>(Log);
-    gzflush(Log, Z_SYNC_FLUSH);
-    gzclose(Log);
+    WriteLog<gzFile, gzopen, gzprintf, gzclose>(LogPath);
   } else {
-    FILE *Log = fopen(LogPath, "w");
-    if (!Log) {
-      goto Cleanup;
-    }
-    WriteLog<FILE *, fprintf>(Log);
-    fflush(Log);
-    fclose(Log);
+    WriteLog<FILE *, fopen, fprintf, fclose>(LogPath);
   }
 
 Cleanup:
