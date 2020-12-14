@@ -47,7 +47,7 @@ def main():
     bit_mode = 32 if '-m32' in args else 64
 
     # Run the build
-    run_args = [cc, *plugin_opts, '-lstdc++', '-ldl', '-Qunused-arguments',
+    run_args = [cc, *plugin_opts, '-lstdc++', '-ldl', '-lz', '-Qunused-arguments',
                 str(LIB_DIR / 'objects' / ('edge-log-rt-%d' % bit_mode) / 'edge-log-rt.cpp.o')]
     if len(args) > 1:
         run_args.extend([*args[1:]])

@@ -1,6 +1,10 @@
 add_library(edge-log-rt-32 OBJECT edge-log-rt.cpp)
 add_library(edge-log-rt-64 OBJECT edge-log-rt.cpp)
 
+include(${CMAKE_ROOT}/Modules/FindZLIB.cmake)
+target_include_directories(edge-log-rt-32 PUBLIC ${ZLIB_INCLUDE_DIRS})
+target_include_directories(edge-log-rt-64 PUBLIC ${ZLIB_INCLUDE_DIRS})
+
 set_target_properties(edge-log-rt-32 PROPERTIES
                       COMPILE_FLAGS "-m32"
                       LINK_FLAGS "-m32")
