@@ -53,7 +53,7 @@ CLEANUP:
   delete Edges;
 }
 
-extern "C" void __edge_log() {
+extern "C" __attribute__((weak)) void __edge_log() {
   void *Ret = __builtin_return_address(0);
   std::uintptr_t CurBB = reinterpret_cast<std::uintptr_t>(Ret);
 
