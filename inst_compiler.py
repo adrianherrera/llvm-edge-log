@@ -15,7 +15,7 @@ import sys
 
 
 DIR = Path(__file__).parent
-LIB_DIR = DIR / '..' / 'lib'
+LIB_DIR = DIR.parent  / 'lib'
 
 
 def main():

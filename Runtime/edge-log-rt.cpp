@@ -13,7 +13,7 @@ using EdgeVector = std::vector<Edge>;
 const char *const kEdgeLogEnv = "EDGE_LOG_PATH";
 const char *const kEnableGZipEnv = "EDGE_LOG_GZIP";
 
-static EdgeVector *Edges = nullptr;
+static EdgeVector *Edges;
 static __thread std::uintptr_t PrevBB;
 
 template <typename T, T OpenF(const char *, const char *),
@@ -60,7 +60,6 @@ __attribute__((destructor)) static void AtExit() {
 
 Cleanup:
   delete Edges;
-  Edges = nullptr;
 }
 
 extern "C" void __edge_log() {
