@@ -13,9 +13,9 @@ using EdgeVector = std::vector<Edge>;
 const char *const kEdgeLogEnv = "EDGE_LOG_PATH";
 const char *const kEnableGZipEnv = "EDGE_LOG_GZIP";
 
-__attribute__((weak)) EdgeVector *Edges = nullptr;
-__attribute__((weak)) std::uintptr_t BaseAddr;
-__attribute__((weak)) __thread std::uintptr_t PrevBB;
+static EdgeVector *Edges = nullptr;
+static std::uintptr_t BaseAddr;
+static __thread std::uintptr_t PrevBB;
 
 template <typename T, T OpenF(const char *, const char *),
           int PrintF(T, const char *, ...), int CloseF(T)>
@@ -62,7 +62,7 @@ Cleanup:
   Edges = nullptr;
 }
 
-extern "C" __attribute__((weak)) void __edge_log() {
+extern "C" void __edge_log() {
   void *Ret = __builtin_return_address(0);
   std::uintptr_t CurBB = reinterpret_cast<std::uintptr_t>(Ret);
 
