@@ -13,9 +13,9 @@ using EdgeVector = std::vector<Edge>;
 const char *const kEdgeLogEnv = "EDGE_LOG_PATH";
 const char *const kEnableGZipEnv = "EDGE_LOG_GZIP";
 
-static EdgeVector *Edges;
-static std::uintptr_t BaseAddr;
-static __thread std::uintptr_t PrevBB;
+__attribute__((weak)) EdgeVector *Edges = nullptr;
+__attribute__((weak)) std::uintptr_t BaseAddr;
+__attribute__((weak)) __thread std::uintptr_t PrevBB;
 
 template <typename T, int PrintF(T, const char *, ...)>
 static void WriteLog(T LogFile) {
@@ -26,10 +26,18 @@ static void WriteLog(T LogFile) {
 }
 
 __attribute__((constructor)) static void Initialize() {
+  if (Edges) {
+    return;
+  }
+
   Edges = new EdgeVector;
 }
 
 __attribute__((destructor)) static void AtExit() {
+  if (!Edges) {
+    return;
+  }
+
   const char *LogPath = getenv(kEdgeLogEnv);
   if (!LogPath) {
     goto Cleanup;
@@ -55,6 +63,7 @@ __attribute__((destructor)) static void AtExit() {
 
 Cleanup:
   delete Edges;
+  Edges = nullptr;
 }
 
 extern "C" __attribute__((weak)) void __edge_log() {
