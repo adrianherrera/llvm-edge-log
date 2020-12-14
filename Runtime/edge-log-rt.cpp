@@ -17,20 +17,12 @@ static EdgeVector *Edges;
 static std::uintptr_t BaseAddr;
 static __thread std::uintptr_t PrevBB;
 
-template <typename T, T OpenF(const char *, const char *),
-          int PrintF(T, const char *, ...), int CloseF(T)>
-static void WriteLog(const char *LogPath) {
-  T LogFile = OpenF(LogPath, "w");
-  if (!LogFile) {
-    return;
-  }
-
+template <typename T, int PrintF(T, const char *, ...)>
+static void WriteLog(T LogFile) {
   PrintF(LogFile, "# base address: %zu\nprev_addr,cur_addr\n", BaseAddr);
   for (const auto &Edge : *Edges) {
     PrintF(LogFile, "%zu,%zu\n", Edge.first, Edge.second);
   }
-
-  CloseF(LogFile);
 }
 
 __attribute__((constructor)) static void Initialize() {
@@ -40,16 +32,28 @@ __attribute__((constructor)) static void Initialize() {
 __attribute__((destructor)) static void AtExit() {
   const char *LogPath = getenv(kEdgeLogEnv);
   if (!LogPath) {
-    goto CLEANUP;
+    goto Cleanup;
   }
 
   if (getenv(kEnableGZipEnv)) {
-    WriteLog<gzFile, gzopen, gzprintf, gzclose>(LogPath);
+    gzFile Log = gzopen(LogPath, "w");
+    if (!Log) {
+      goto Cleanup;
+    }
+    WriteLog<gzFile, gzprintf>(Log);
+    gzflush(Log, Z_SYNC_FLUSH);
+    gzclose(Log);
   } else {
-    WriteLog<FILE *, fopen, fprintf, fclose>(LogPath);
+    FILE *Log = fopen(LogPath, "w");
+    if (!Log) {
+      goto Cleanup;
+    }
+    WriteLog<FILE *, fprintf>(Log);
+    fflush(Log);
+    fclose(Log);
   }
 
-CLEANUP:
+Cleanup:
   delete Edges;
 }
 
